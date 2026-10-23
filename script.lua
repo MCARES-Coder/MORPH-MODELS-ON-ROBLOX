@@ -1,40 +1,44 @@
--- Servisler
-local Players = game:GetService("Players")
 local InsertService = game:GetService("InsertService")
+local Players = game:GetService("Players")
 local LocalPlayer = Players.LocalPlayer
 
--- BURAYA KENDİ MODELİNİN ASSET ID'SİNİ YAZ (Örn: 123456789)
+-- Kendi Model ID'ni buraya yaz
 local modelId = 10017660726 
 
-local function spawnSCP()
-    local success, asset = pcall(function()
-        return InsertService:LoadAsset(modelId)
-    end)
-    
-    if success and asset then
-        asset.Parent = workspace
-        
-        -- Karakterin önüne yerleştirme
-        local char = LocalPlayer.Character
-        if char and char:FindFirstChild("HumanoidRootPart") then
-            local rootPart = char.HumanoidRootPart
-            
-            -- Modelin içindeki parçaları/modeli oyuncunun önüne taşı
-            for _, child in ipairs(asset:GetChildren()) do
-                if child:IsA("Model") or child:IsA("BasePart") then
-                    if asset.PrimaryPart then
-                        asset:SetPrimaryPartCFrame(rootPart.CFrame * CFrame.new(0, 0, -5))
-                    elseif child:IsA("BasePart") then
-                        child.CFrame = rootPart.CFrame * CFrame.new(0, 0, -5)
-                    end
-                end
-            end
-        end
-        print("SCP Başarıyla Çağrıldı!")
-    else
-        warn("Model yüklenemedi! ID'yi veya modelin izinlerini kontrol et.")
-    end
-end
+-- Ekranda hata göstermek için ScreenGui oluşturalım
+local screenGui = Instance.new("ScreenGui")
+screenGui.Name = "DebugGui"
+screenGui.Parent = game.CoreGui
 
--- Fonksiyonu çalıştır
-spawnSCP()
+local textLabel = Instance.new("TextLabel")
+textLabel.Size = UDim2.new(0, 400, 0, 50)
+textLabel.Position = UDim2.new(0.5, -200, 0.1, 0)
+textLabel.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+textLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+textLabel.TextSize = 14
+textLabel.Font = Enum.Font.Code
+textLabel.Text = "Model yükleniyor..."
+textLabel.Parent = screenGui
+
+local success, result = pcall(function()
+    return InsertService:LoadAsset(modelId)
+end)
+
+if success and result then
+    textLabel.Text = "Başarılı! Model indirildi."
+    textLabel.TextColor3 = Color3.fromRGB(0, 255, 0)
+    result.Parent = workspace
+    
+    local char = LocalPlayer.Character
+    if char and char:FindFirstChild("HumanoidRootPart") then
+        result:MoveTo(char.HumanoidRootPart.Position + Vector3.new(0, 0, -5))
+    end
+    
+    task.wait(3)
+    screenGui:Destroy()
+else
+    -- Hatanın ne olduğunu ekranda koca koca gösterelim
+    textLabel.Size = UDim2.new(0, 600, 0, 100)
+    textLabel.Text = "HATA: " .. tostring(result)
+    textLabel.TextColor3 = Color3.fromRGB(255, 0, 0)
+end
